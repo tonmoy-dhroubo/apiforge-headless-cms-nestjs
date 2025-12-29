@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToMany, JoinTable } from 'typeorm';
 
-@Entity()
+@Entity('role')
 export class Role {
   @PrimaryGeneratedColumn()
   id: number;
@@ -9,7 +9,7 @@ export class Role {
   name: string;
 }
 
-@Entity()
+@Entity('user')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -29,8 +29,8 @@ export class User {
   @Column({ nullable: true })
   lastname: string;
 
-  @ManyToMany(() => Role, { cascade: true, eager: true })
-  @JoinTable()
+  @ManyToMany(() => Role, { cascade: false, eager: true })
+  @JoinTable({ name: 'user_roles' })
   roles: Role[];
 
   @CreateDateColumn()

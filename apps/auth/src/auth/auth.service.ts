@@ -14,29 +14,93 @@ export class AuthService {
   ) {}
 
   async register(body: any) {
-    const exists = await this.userRepo.findOne({ where: { username: body.username } });
-    if (exists) throw new ConflictException('User exists');
+    try {
+      // Check if user exists by username or email
+      const existingUser = await this.userRepo.findOne({ 
+        where: { username: body.username }
+      });
+      if (existingUser) throw new ConflictException('Username already exists');
 
-    const hashedPassword = await bcrypt.hash(body.password, 10);
-    
-    let role = await this.roleRepo.findOne({ where: { name: 'REGISTERED' } });
-    if (!role) {
-      role = await this.roleRepo.save({ name: 'REGISTERED' });
+      const existingEmail = await this.userRepo.findOne({ 
+        where: { email: body.email }
+      });
+      if (existingEmail) throw new ConflictException('Email already exists');
+
+      const hashedPassword = await bcrypt.hash(body.password, 10);
+      
+      // Get or create REGISTERED role
+      let role = await this.roleRepo.findOne({ where: { name: 'REGISTERED' } });
+      if (!role) {
+        role = this.roleRepo.create({ name: 'REGISTERED' });
+        role = await this.roleRepo.save(role);
+      }
+
+      // Create user
+      const user = this.userRepo.create({
+        username: body.username,
+        email: body.email,
+        password: hashedPassword,
+        firstname: body.firstname || null,
+        lastname: body.lastname || null,
+        roles: [role]
+      });
+
+      const savedUser = await this.userRepo.save(user);
+      
+      // Return login response (roles are eager loaded, so they should be available)
+      const roleNames = savedUser.roles ? savedUser.roles.map(r => r.name) : [];
+      const payload = { 
+        username: savedUser.username, 
+        sub: savedUser.id, 
+        roles: roleNames
+      };
+      return {
+        success: true,
+        data: {
+          token: this.jwtService.sign(payload),
+          user: { 
+            id: userWithRoles.id, 
+            username: userWithRoles.username, 
+            email: userWithRoles.email, 
+            roles: payload.roles 
+          }
+        }
+      };
+    } catch (error) {
+      if (error instanceof ConflictException || error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Registration error:', error);
+      throw new Error(`Registration failed: ${error.message}`);
     }
-
-    const user = this.userRepo.create({
-      ...body,
-      password: hashedPassword,
-      roles: [role]
-    });
-
-    await this.userRepo.save(user);
-    return this.login(body);
   }
 
   async login(body: any) {
-    const user = await this.userRepo.findOne({ where: { username: body.username } });
-    if (!user || !(await bcrypt.compare(body.password, user.password))) {
+    // Support both username and email login
+    const identifier = body.username || body.email;
+    if (!identifier) {
+      throw new UnauthorizedException('Username or email is required');
+    }
+
+    // Try username first, then email
+    let user = await this.userRepo.findOne({ 
+      where: { username: identifier },
+      relations: ['roles']
+    });
+    
+    if (!user) {
+      user = await this.userRepo.findOne({ 
+        where: { email: identifier },
+        relations: ['roles']
+      });
+    }
+    
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(body.password, user.password);
+    if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -45,12 +109,12 @@ export class AuthService {
       success: true,
       data: {
         token: this.jwtService.sign(payload),
-        user: { id: user.id, username: user.username, roles: payload.roles }
+        user: { id: user.id, username: user.username, email: user.email, roles: payload.roles }
       }
     };
   }
 
   async getAllUsers() {
-    return this.userRepo.find();
+    return this.userRepo.find({ relations: ['roles'] });
   }
 }

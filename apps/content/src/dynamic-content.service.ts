@@ -10,6 +10,17 @@ export class DynamicContentService {
   async create(apiId: string, data: Record<string, any>) {
     const table = this.getTable(apiId);
     
+    // Check if table exists (table name is stored without quotes in information_schema)
+    const tableNameWithoutQuotes = table.replace(/"/g, '');
+    const tableExists = await this.dataSource.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
+      [tableNameWithoutQuotes]
+    );
+    
+    if (!tableExists[0]?.exists) {
+      throw new NotFoundException(`Content type with API ID "${apiId}" does not exist. Please create the content type first.`);
+    }
+    
     const columns = Object.keys(data).map(k => `"${k}"`).join(', ');
     const values = Object.values(data);
     const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
@@ -26,10 +37,22 @@ export class DynamicContentService {
 
   async findAll(apiId: string, filters: any) {
     const table = this.getTable(apiId);
+    
+    // Check if table exists (table name is stored without quotes in information_schema)
+    const tableNameWithoutQuotes = table.replace(/"/g, '');
+    const tableExists = await this.dataSource.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
+      [tableNameWithoutQuotes]
+    );
+    
+    if (!tableExists[0]?.exists) {
+      throw new NotFoundException(`Content type with API ID "${apiId}" does not exist. Please create the content type first.`);
+    }
+    
     let sql = `SELECT * FROM "${table}"`;
     const params = [];
     
-    if (Object.keys(filters).length > 0) {
+    if (filters && Object.keys(filters).length > 0) {
       const where = Object.keys(filters).map((k, i) => {
         params.push(filters[k]);
         return `"${k}" = $${i + 1}`;
@@ -41,10 +64,23 @@ export class DynamicContentService {
   }
 
   async findOne(apiId: string, id: number) {
-    const res = await this.dataSource.query(
-      `SELECT * FROM "${this.getTable(apiId)}" WHERE id = $1`, [id]
+    const table = this.getTable(apiId);
+    
+    // Check if table exists (table name is stored without quotes in information_schema)
+    const tableNameWithoutQuotes = table.replace(/"/g, '');
+    const tableExists = await this.dataSource.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
+      [tableNameWithoutQuotes]
     );
-    if (!res.length) throw new NotFoundException();
+    
+    if (!tableExists[0]?.exists) {
+      throw new NotFoundException(`Content type with API ID "${apiId}" does not exist. Please create the content type first.`);
+    }
+    
+    const res = await this.dataSource.query(
+      `SELECT * FROM "${table}" WHERE id = $1`, [id]
+    );
+    if (!res.length) throw new NotFoundException(`Content with id ${id} not found`);
     return res[0];
   }
 

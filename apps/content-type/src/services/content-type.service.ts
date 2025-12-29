@@ -13,14 +13,61 @@ export class ContentTypeService {
   ) {}
 
   async create(dto: any) {
-    const exists = await this.repo.findOne({ where: { apiId: dto.apiId } });
-    if(exists) throw new ConflictException('API ID Exists');
+    try {
+      const exists = await this.repo.findOne({ where: { apiId: dto.apiId } });
+      if(exists) throw new ConflictException('API ID Exists');
 
-    const contentType = this.repo.create(dto);
-    
-    await this.dynamicTableService.createTable(dto.apiId, dto.fields);
+      // Map field types to database types
+      const mapFieldType = (type: string): string => {
+        const typeMap: Record<string, string> = {
+          'string': 'SHORT_TEXT',
+          'text': 'LONG_TEXT',
+          'boolean': 'BOOLEAN',
+          'number': 'NUMBER',
+          'datetime': 'DATETIME',
+        };
+        return typeMap[type.toLowerCase()] || 'SHORT_TEXT';
+      };
 
-    return this.repo.save(contentType);
+      // Create Field entities from dto.fields
+      const fields = (dto.fields || []).map((f: any) => {
+        const field = new Field();
+        field.name = f.name || f.fieldName;
+        field.fieldName = f.fieldName || f.name;
+        field.type = mapFieldType(f.type);
+        field.required = f.required || false;
+        field.unique = f.unique || false;
+        return field;
+      });
+
+      // Prepare fields for dynamic table creation
+      const tableFields = fields.map(f => ({
+        fieldName: f.fieldName,
+        type: f.type,
+        required: f.required,
+        unique: f.unique
+      }));
+
+      // Create the dynamic table first
+      await this.dynamicTableService.createTable(dto.apiId, tableFields);
+
+      // Create ContentType with fields
+      const contentType = this.repo.create({
+        name: dto.name,
+        pluralName: dto.pluralName || `${dto.name}s`,
+        apiId: dto.apiId,
+        description: dto.description,
+        fields: fields
+      });
+
+      return await this.repo.save(contentType);
+    } catch (error) {
+      console.error('ContentType creation error:', error);
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      throw new Error(`Failed to create content type: ${error.message}`);
+    }
   }
 
   async findAll() {
