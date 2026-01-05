@@ -5,6 +5,7 @@ import { AllExceptionsFilter } from '@app/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(MediaModule);
+  app.enableCors();
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());
   await app.listen(8084);

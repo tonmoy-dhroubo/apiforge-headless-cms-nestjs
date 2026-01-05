@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -11,6 +12,7 @@ export class AuthService {
     @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(Role) private roleRepo: Repository<Role>,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   private buildAuthResponse(user: User) {
@@ -19,12 +21,26 @@ export class AuthService {
 
     return {
       token: this.jwtService.sign(payload),
+      refreshToken: this.signRefreshToken(payload),
       type: 'Bearer',
       userId: user.id,
       username: user.username,
       email: user.email,
       roles: roleNames,
     };
+  }
+
+  private signRefreshToken(payload: { username: string; sub: number; roles: string[] }) {
+    const refreshSecret =
+      this.configService.get('JWT_REFRESH_SECRET') ||
+      this.configService.get('JWT_SECRET') ||
+      'default-secret';
+    const refreshExpiration =
+      this.configService.get('JWT_REFRESH_EXPIRATION') || '7d';
+    return this.jwtService.sign(
+      { ...payload, tokenType: 'refresh' },
+      { secret: refreshSecret, expiresIn: refreshExpiration },
+    );
   }
 
   private mapUser(user: User) {
@@ -161,6 +177,37 @@ export class AuthService {
   async deleteUser(id: number) {
     const user = await this.getUserEntityById(id);
     await this.userRepo.remove(user);
+  }
+
+  async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+    const refreshSecret =
+      this.configService.get('JWT_REFRESH_SECRET') ||
+      this.configService.get('JWT_SECRET') ||
+      'default-secret';
+
+    let payload: { sub?: number; tokenType?: string };
+    try {
+      payload = this.jwtService.verify(refreshToken, { secret: refreshSecret });
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (payload.tokenType !== 'refresh' || !payload.sub) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const user = await this.userRepo.findOne({
+      where: { id: payload.sub },
+      relations: ['roles'],
+    });
+    if (!user) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    return this.buildAuthResponse(user);
   }
 
   validateToken(token: string) {

@@ -45,7 +45,15 @@ export class MediaController {
   }
 
   @Get('files/:filename')
-  serveFile(@Param('filename') filename: string, @Res() res: Response) {
+  async serveFile(@Param('filename') filename: string, @Res() res: Response) {
+    const media = await this.service.findByFilename(filename);
+    if (media?.name) {
+      const safeName = media.name.replace(/"/g, '');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(media.name)}`,
+      );
+    }
     return res.sendFile(filename, { root: UPLOAD_DIR });
   }
 }

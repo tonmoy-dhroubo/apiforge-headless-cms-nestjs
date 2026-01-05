@@ -24,6 +24,12 @@ export class AuthController {
     return ApiResponse.success(valid);
   }
 
+  @Post('refresh')
+  async refresh(@Body() body: { refreshToken: string }) {
+    const response = await this.service.refresh(body.refreshToken);
+    return ApiResponse.success(response, 'Token refreshed');
+  }
+
   @Get('users')
   async getUsers() {
     return ApiResponse.success(await this.service.getAllUsers());
