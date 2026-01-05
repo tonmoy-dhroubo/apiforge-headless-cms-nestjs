@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity()
+@Entity('media')
 export class Media {
   @PrimaryGeneratedColumn()
   id: number;
@@ -8,18 +8,39 @@ export class Media {
   @Column()
   name: string;
 
-  @Column()
-  filename: string;
+  @Column({ name: 'alternative_text', nullable: true })
+  alternativeText?: string | null;
+
+  @Column({ nullable: true })
+  caption?: string | null;
+
+  @Column({ nullable: true })
+  width?: number | null;
+
+  @Column({ nullable: true })
+  height?: number | null;
 
   @Column()
-  mimeType: string;
+  hash: string;
 
-  @Column('bigint')
-  size: number;
+  @Column({ nullable: true })
+  ext?: string | null;
 
-  @Column()
-  url: string;
+  @Column({ nullable: true })
+  mime?: string | null;
 
-  @CreateDateColumn()
+  @Column('numeric', { nullable: true })
+  size?: number | null;
+
+  @Column({ nullable: true })
+  url?: string | null;
+
+  @Column({ nullable: true })
+  provider?: string | null;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

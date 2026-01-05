@@ -1,15 +1,26 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 
-@Entity('role')
+@Entity('roles')
 export class Role {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ unique: true })
   name: string;
+
+  @Column({ nullable: true })
+  description?: string;
 }
 
-@Entity('user')
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -20,7 +31,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @Column({ nullable: true })
@@ -29,10 +40,20 @@ export class User {
   @Column({ nullable: true })
   lastname: string;
 
+  @Column({ default: true })
+  enabled: boolean;
+
   @ManyToMany(() => Role, { cascade: false, eager: true })
-  @JoinTable({ name: 'user_roles' })
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: { name: 'user_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'role_id', referencedColumnName: 'id' },
+  })
   roles: Role[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

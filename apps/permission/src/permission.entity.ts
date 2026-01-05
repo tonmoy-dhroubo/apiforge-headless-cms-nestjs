@@ -1,11 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, PrimaryColumn } from 'typeorm';
 
-@Entity()
+@Entity('api_permissions')
 export class ApiPermission {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ name: 'content_type_api_id' })
   contentTypeApiId: string;
 
   @Column()
@@ -14,21 +14,39 @@ export class ApiPermission {
   @Column()
   method: string;
 
-  @Column("text", { array: true })
-  allowedRoles: string[];
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 }
 
-@Entity()
+@Entity('api_permission_roles')
+export class ApiPermissionRole {
+  @PrimaryColumn({ name: 'permission_id', type: 'bigint' })
+  permissionId: number;
+
+  @PrimaryColumn({ name: 'role_name' })
+  roleName: string;
+}
+
+@Entity('content_permissions')
 export class ContentPermission {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ name: 'content_type_api_id' })
   contentTypeApiId: string;
 
   @Column()
   action: string;
 
-  @Column("text", { array: true })
-  allowedRoles: string[];
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+}
+
+@Entity('content_permission_roles')
+export class ContentPermissionRole {
+  @PrimaryColumn({ name: 'permission_id', type: 'bigint' })
+  permissionId: number;
+
+  @PrimaryColumn({ name: 'role_name' })
+  roleName: string;
 }

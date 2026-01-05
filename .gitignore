@@ -10,6 +10,7 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+.run/
 
 # OS
 .DS_Store
@@ -50,4 +51,3 @@ lerna-debug.log*
 # Test results
 test-results.log
 api-test-results.log
-

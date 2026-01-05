@@ -1,13 +1,40 @@
 const { Client } = require('pg');
+const fs = require('fs');
+const path = require('path');
 
-const connectionString = 'postgresql://neondb_owner:npg_zTGZnwE5qDQ6@ep-lingering-rain-ahbp23u9-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  const contents = fs.readFileSync(envPath, 'utf8');
+  contents.split(/\r?\n/).forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) return;
+    const [key, ...rest] = trimmed.split('=');
+    const value = rest.join('=').replace(/^['"]|['"]$/g, '');
+    if (!process.env[key]) {
+      process.env[key] = value;
+    }
+  });
+}
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL is required in the environment or .env file.');
+}
 
 async function testConnection() {
+  const sslServerName = process.env.DATABASE_SSL_SERVERNAME;
+  const url = new URL(connectionString);
   const client = new Client({
-    connectionString: connectionString,
+    host: url.hostname,
+    port: parseInt(url.port, 10) || 5432,
+    user: url.username,
+    password: url.password,
+    database: url.pathname.slice(1),
     ssl: {
-      rejectUnauthorized: false
-    }
+      rejectUnauthorized: false,
+      ...(sslServerName ? { servername: sslServerName } : {})
+    },
+    family: 4
   });
 
   try {
@@ -42,4 +69,3 @@ async function testConnection() {
 }
 
 testConnection();
-

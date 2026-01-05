@@ -260,14 +260,14 @@ async function testMedia() {
   
   try {
     // Get all media
-    log('1. Testing GET /api/media');
-    const getAllRes = await makeRequest('GET', `${GATEWAY_URL}/api/media`);
+    log('1. Testing GET /api/upload');
+    const getAllRes = await makeRequest('GET', `${GATEWAY_URL}/api/upload`);
     log(`   Status: ${getAllRes.status}`);
     log(`   Response: ${JSON.stringify(getAllRes.data, null, 2)}`);
     
     // Note: File upload requires multipart/form-data which is complex with native http
     // We'll skip the upload test for now or use a library
-    log('\n2. Testing POST /api/media/upload - SKIPPED (requires file upload)');
+    log('\n2. Testing POST /api/upload - SKIPPED (requires file upload)');
     log('   Note: File upload requires multipart/form-data handling');
     
     return true;
@@ -307,9 +307,10 @@ async function testPermissions() {
     // Check API permission
     log('\n3. Testing POST /api/permissions/api/check');
     const checkData = {
-      apiId: 'blog-post',
+      contentTypeApiId: 'blog-post',
+      endpoint: '/api/content/blog-post',
       method: 'GET',
-      roles: ['user']
+      userRoles: ['user']
     };
     const checkRes = await makeRequest('POST', `${GATEWAY_URL}/api/permissions/api/check`, checkData);
     log(`   Status: ${checkRes.status}`);
@@ -353,4 +354,3 @@ async function runTests() {
 
 // Run tests
 runTests().catch(console.error);
-

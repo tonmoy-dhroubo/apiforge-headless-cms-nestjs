@@ -8,7 +8,7 @@ import { AuthCommonModule } from '@app/common/auth/auth-common.module';
 
 @Module({
   imports: [
-    DatabaseModule.forRoot([Media], true),
+    DatabaseModule.forRoot([Media], false),
     TypeOrmModule.forFeature([Media]),
     AuthCommonModule,
   ],

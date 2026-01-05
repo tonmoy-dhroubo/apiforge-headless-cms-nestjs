@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, UploadedFile, UseInterceptors, Res } from '@nestjs/common';
+import { Controller, Post, Get, Param, UploadedFile, UseInterceptors, Res, Delete } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,14 +7,16 @@ import { Response } from 'express';
 import { MediaService } from './media.service';
 import { ApiResponse } from '@app/common';
 
-@Controller('api/media')
+const UPLOAD_DIR = './uploads';
+
+@Controller('api/upload')
 export class MediaController {
   constructor(private service: MediaService) {}
 
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file', {
+  @Post()
+  @UseInterceptors(FileInterceptor('files', {
     storage: diskStorage({
-      destination: './uploads',
+      destination: UPLOAD_DIR,
       filename: (req, file, cb) => {
         const randomName = uuidv4();
         cb(null, `${randomName}${extname(file.originalname)}`);
@@ -23,7 +25,7 @@ export class MediaController {
   }))
   async upload(@UploadedFile() file: Express.Multer.File) {
     const media = await this.service.saveMediaRecord(file);
-    return ApiResponse.success(media, 'Uploaded');
+    return ApiResponse.success(media, 'File uploaded successfully');
   }
 
   @Get()
@@ -31,8 +33,19 @@ export class MediaController {
     return ApiResponse.success(await this.service.findAll());
   }
 
+  @Get(':id')
+  async getById(@Param('id') id: number) {
+    return ApiResponse.success(await this.service.findById(Number(id)));
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: number) {
+    await this.service.delete(Number(id), UPLOAD_DIR);
+    return ApiResponse.success(null, 'File deleted successfully');
+  }
+
   @Get('files/:filename')
   serveFile(@Param('filename') filename: string, @Res() res: Response) {
-    return res.sendFile(filename, { root: './uploads' });
+    return res.sendFile(filename, { root: UPLOAD_DIR });
   }
 }

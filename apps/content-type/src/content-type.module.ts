@@ -10,7 +10,7 @@ import { AuthCommonModule } from '@app/common/auth/auth-common.module';
 
 @Module({
   imports: [
-    DatabaseModule.forRoot([ContentType, Field], true),
+    DatabaseModule.forRoot([ContentType, Field], false),
     TypeOrmModule.forFeature([ContentType, Field]),
     AuthCommonModule,
   ],

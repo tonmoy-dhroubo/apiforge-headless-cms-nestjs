@@ -9,7 +9,7 @@ import { User, Role } from './user/user.entity';
 
 @Module({
   imports: [
-    DatabaseModule.forRoot([User, Role], true),
+    DatabaseModule.forRoot([User, Role], false),
     TypeOrmModule.forFeature([User, Role]),
     JwtModule.registerAsync({
       inject: [ConfigService],

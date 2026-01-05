@@ -1,4 +1,4 @@
-const DEFAULT_DATABASE_URL = 'postgresql://neondb_owner:npg_zTGZnwE5qDQ6@ep-lingering-rain-ahbp23u9-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const DEFAULT_DATABASE_URL = '';
 
 export interface DatabaseConfig {
   type: 'postgres';
@@ -14,15 +14,24 @@ export interface DatabaseConfig {
   extra?: {
     sslmode: string;
     channel_binding: string;
+    family?: number;
   };
   autoLoadEntities: boolean;
 }
 
 export const getDatabaseConfig = (configService?: any): DatabaseConfig => {
-  const connectionString = configService?.get?.('DATABASE_URL') || DEFAULT_DATABASE_URL;
-  
+  const connectionString = configService?.get?.('DATABASE_URL') || process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is required to configure the database connection.');
+  }
+
   const url = new URL(connectionString);
+  const sslmode = url.searchParams.get('sslmode') || 'require';
+  const channelBinding =
+    url.searchParams.get('channel_binding') || url.searchParams.get('channelBinding') || 'require';
   
+  const sslServerName = configService?.get?.('DATABASE_SSL_SERVERNAME') || process.env.DATABASE_SSL_SERVERNAME;
+
   return {
     type: 'postgres',
     host: url.hostname,
@@ -32,12 +41,13 @@ export const getDatabaseConfig = (configService?: any): DatabaseConfig => {
     database: url.pathname.slice(1),
     ssl: {
       rejectUnauthorized: false,
+      ...(sslServerName ? { servername: sslServerName } : {}),
     },
     extra: {
-      sslmode: 'require',
-      channel_binding: 'require',
+      sslmode,
+      channel_binding: channelBinding,
+      family: 4,
     },
     autoLoadEntities: true,
   };
 };
-

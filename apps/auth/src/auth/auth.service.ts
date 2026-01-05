@@ -1,7 +1,7 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, Role } from '../user/user.entity';
 
@@ -12,6 +12,34 @@ export class AuthService {
     @InjectRepository(Role) private roleRepo: Repository<Role>,
     private jwtService: JwtService,
   ) {}
+
+  private buildAuthResponse(user: User) {
+    const roleNames = user.roles ? user.roles.map((r) => r.name) : [];
+    const payload = { username: user.username, sub: user.id, roles: roleNames };
+
+    return {
+      token: this.jwtService.sign(payload),
+      type: 'Bearer',
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      roles: roleNames,
+    };
+  }
+
+  private mapUser(user: User) {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      roles: user.roles ? user.roles.map((role) => role.name) : [],
+      enabled: user.enabled,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
 
   async register(body: any) {
     try {
@@ -31,7 +59,7 @@ export class AuthService {
       // Get or create REGISTERED role
       let role = await this.roleRepo.findOne({ where: { name: 'REGISTERED' } });
       if (!role) {
-        role = this.roleRepo.create({ name: 'REGISTERED' });
+        role = this.roleRepo.create({ name: 'REGISTERED', description: 'Default registered user' });
         role = await this.roleRepo.save(role);
       }
 
@@ -46,26 +74,12 @@ export class AuthService {
       });
 
       const savedUser = await this.userRepo.save(user);
+      const reloadedUser = await this.userRepo.findOne({
+        where: { id: savedUser.id },
+        relations: ['roles'],
+      });
       
-      // Return login response (roles are eager loaded, so they should be available)
-      const roleNames = savedUser.roles ? savedUser.roles.map(r => r.name) : [];
-      const payload = { 
-        username: savedUser.username, 
-        sub: savedUser.id, 
-        roles: roleNames
-      };
-      return {
-        success: true,
-        data: {
-          token: this.jwtService.sign(payload),
-          user: { 
-            id: userWithRoles.id, 
-            username: userWithRoles.username, 
-            email: userWithRoles.email, 
-            roles: payload.roles 
-          }
-        }
-      };
+      return this.buildAuthResponse(reloadedUser || savedUser);
     } catch (error) {
       if (error instanceof ConflictException || error instanceof UnauthorizedException) {
         throw error;
@@ -104,17 +118,57 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { username: user.username, sub: user.id, roles: user.roles.map(r => r.name) };
-    return {
-      success: true,
-      data: {
-        token: this.jwtService.sign(payload),
-        user: { id: user.id, username: user.username, email: user.email, roles: payload.roles }
-      }
-    };
+    if (!user.enabled) {
+      throw new UnauthorizedException('Account is disabled');
+    }
+
+    return this.buildAuthResponse(user);
   }
 
   async getAllUsers() {
-    return this.userRepo.find({ relations: ['roles'] });
+    const users = await this.userRepo.find({ relations: ['roles'] });
+    return users.map((user) => this.mapUser(user));
+  }
+
+  private async getUserEntityById(id: number) {
+    const user = await this.userRepo.findOne({ where: { id }, relations: ['roles'] });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
+
+  async getUserById(id: number) {
+    const user = await this.getUserEntityById(id);
+    return this.mapUser(user);
+  }
+
+  async assignRolesToUser(id: number, roles: string[]) {
+    const user = await this.getUserEntityById(id);
+    const roleEntities = await this.roleRepo.find({ where: { name: In(roles) } });
+
+    if (roleEntities.length !== roles.length) {
+      const existing = new Set(roleEntities.map((r) => r.name));
+      const missing = roles.filter((name) => !existing.has(name));
+      throw new NotFoundException(`Role not found: ${missing.join(', ')}`);
+    }
+
+    user.roles = roleEntities;
+    const saved = await this.userRepo.save(user);
+    return this.mapUser(saved);
+  }
+
+  async deleteUser(id: number) {
+    const user = await this.getUserEntityById(id);
+    await this.userRepo.remove(user);
+  }
+
+  validateToken(token: string) {
+    try {
+      this.jwtService.verify(token);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

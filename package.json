@@ -2,7 +2,7 @@
   "name": "apiforge-cms",
   "version": "0.0.1",
   "scripts": {
-    "build": "nest build",
+    "build": "npx nest build gateway && npx nest build auth && npx nest build content-type && npx nest build content && npx nest build media && npx nest build permission",
     "start:gateway": "nest start gateway",
     "start:auth": "nest start auth",
     "start:content-type": "nest start content-type",

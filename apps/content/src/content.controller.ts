@@ -11,7 +11,7 @@ export class ContentController {
   @Post()
   async create(@Param('apiId') apiId: string, @Body() body: any) {
     const result = await this.service.create(apiId, body);
-    return ApiResponse.success(result);
+    return ApiResponse.success(result, 'Content created successfully');
   }
 
   @Get()
@@ -35,12 +35,12 @@ export class ContentController {
   @Put(':id')
   async update(@Param('apiId') apiId: string, @Param('id') id: number, @Body() body: any) {
     const result = await this.service.update(apiId, id, body);
-    return ApiResponse.success(result);
+    return ApiResponse.success(result, 'Content updated successfully');
   }
 
   @Delete(':id')
   async delete(@Param('apiId') apiId: string, @Param('id') id: number) {
     await this.service.delete(apiId, id);
-    return ApiResponse.success(null, 'Deleted');
+    return ApiResponse.success(null, 'Content deleted successfully');
   }
 }
