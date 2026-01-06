@@ -26,18 +26,19 @@ if [ -z "${DATABASE_URL:-}" ] && [ -f "$ROOT/.env" ]; then
 fi
 
 if [ -n "${DATABASE_URL:-}" ]; then
-  read -r DB_HOST DB_NAME DB_USER DB_PASSWORD DB_SSLMODE DB_CHANNEL_BINDING < <(
+  read -r DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD DB_SSLMODE DB_CHANNEL_BINDING < <(
     node -e "
       const { URL } = require('url');
       const url = new URL(process.env.DATABASE_URL);
       const sslmode = url.searchParams.get('sslmode') || 'require';
       const channelBinding = url.searchParams.get('channel_binding') || url.searchParams.get('channelBinding') || 'require';
-      console.log(url.hostname, url.pathname.slice(1), url.username, url.password, sslmode, channelBinding);
+      console.log(url.hostname, url.port || '5432', url.pathname.slice(1), url.username, url.password, sslmode, channelBinding);
     "
   )
 fi
 
 DB_HOST=${DB_HOST:-}
+DB_PORT=${DB_PORT:-5432}
 DB_NAME=${DB_NAME:-}
 DB_USER=${DB_USER:-}
 DB_PASSWORD=${DB_PASSWORD:-}
@@ -50,7 +51,13 @@ if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASS
 fi
 
 export PGPASSWORD="$DB_PASSWORD"
-PSQL_CONN="host=$DB_HOST dbname=$DB_NAME user=$DB_USER sslmode=$DB_SSLMODE channel_binding=$DB_CHANNEL_BINDING"
+PSQL_ADMIN_CONN="host=$DB_HOST port=$DB_PORT dbname=postgres user=$DB_USER sslmode=$DB_SSLMODE channel_binding=$DB_CHANNEL_BINDING"
+PSQL_CONN="host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER sslmode=$DB_SSLMODE channel_binding=$DB_CHANNEL_BINDING"
+
+DB_EXISTS="$(psql "$PSQL_ADMIN_CONN" -qtAX -c "select 1 from pg_database where datname = '$DB_NAME';" || true)"
+if [ "$DB_EXISTS" != "1" ]; then
+  psql "$PSQL_ADMIN_CONN" -v ON_ERROR_STOP=1 -c "create database \"$DB_NAME\";"
+fi
 
 psql "$PSQL_CONN" -c "select current_database(), current_user;"
 

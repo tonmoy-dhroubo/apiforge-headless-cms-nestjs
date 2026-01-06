@@ -1,4 +1,4 @@
-const DEFAULT_DATABASE_URL = '';
+const DEFAULT_DATABASE_URL = 'postgresql://dev:devpass@localhost:5432/devdb';
 
 export interface DatabaseConfig {
   type: 'postgres';
@@ -10,6 +10,7 @@ export interface DatabaseConfig {
   database?: string;
   ssl?: {
     rejectUnauthorized: boolean;
+    servername?: string;
   };
   extra?: {
     sslmode: string;
@@ -26,11 +27,12 @@ export const getDatabaseConfig = (configService?: any): DatabaseConfig => {
   }
 
   const url = new URL(connectionString);
-  const sslmode = url.searchParams.get('sslmode') || 'require';
+  const sslmode = (url.searchParams.get('sslmode') || 'require').toLowerCase();
   const channelBinding =
     url.searchParams.get('channel_binding') || url.searchParams.get('channelBinding') || 'require';
   
   const sslServerName = configService?.get?.('DATABASE_SSL_SERVERNAME') || process.env.DATABASE_SSL_SERVERNAME;
+  const sslRequired = ['require', 'verify-ca', 'verify-full'].includes(sslmode);
 
   return {
     type: 'postgres',
@@ -39,10 +41,14 @@ export const getDatabaseConfig = (configService?: any): DatabaseConfig => {
     username: url.username,
     password: url.password,
     database: url.pathname.slice(1),
-    ssl: {
-      rejectUnauthorized: false,
-      ...(sslServerName ? { servername: sslServerName } : {}),
-    },
+    ...(sslRequired
+      ? {
+          ssl: {
+            rejectUnauthorized: false,
+            ...(sslServerName ? { servername: sslServerName } : {}),
+          },
+        }
+      : {}),
     extra: {
       sslmode,
       channel_binding: channelBinding,

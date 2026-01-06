@@ -29,6 +29,7 @@ The project follows a microservices architecture with the following services:
 - Node.js (v18 or higher)
 - npm or yarn
 - PostgreSQL database (or use the configured Neon PostgreSQL)
+- Docker (optional, for containerized run)
 
 ## 🛠️ Installation
 
@@ -55,7 +56,7 @@ JWT_EXPIRATION=1h
 
 ### Database Configuration
 
-The project uses a shared PostgreSQL database configuration. The default connection string is configured in `libs/common/src/database/database.config.ts`. All services connect to the same database (`neondb`).
+The project uses a shared PostgreSQL database configuration. The default connection string is configured in `libs/common/src/database/database.config.ts`. All services connect to the same database (`devdb`).
 
 To use a different database, set the `DATABASE_URL` environment variable:
 ```bash
@@ -94,6 +95,15 @@ Build all services:
 ```bash
 npm run build
 ```
+
+### Docker
+
+Run the full stack (Postgres + all services in one container):
+```bash
+docker compose up --build
+```
+
+Gateway: `http://localhost:8080`
 
 ## 📡 API Endpoints
 
@@ -205,4 +215,3 @@ For questions or support, please open an issue on GitHub.
 ---
 
 Built with ❤️ using NestJS
-
