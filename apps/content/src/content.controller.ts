@@ -1,10 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { DynamicContentService } from './dynamic-content.service';
 import { ApiResponse } from '@app/common';
-import { JwtAuthGuard } from '@app/common/auth/jwt-auth.guard';
 
 @Controller('api/content/:apiId')
-// @UseGuards(JwtAuthGuard)
 export class ContentController {
   constructor(private service: DynamicContentService) {}
 

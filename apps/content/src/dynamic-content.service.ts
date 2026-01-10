@@ -9,8 +9,7 @@ export class DynamicContentService {
 
   async create(apiId: string, data: Record<string, any>) {
     const table = this.getTable(apiId);
-    
-    // Check if table exists (table name is stored without quotes in information_schema)
+
     const tableNameWithoutQuotes = table.replace(/"/g, '');
     const tableExists = await this.dataSource.query(
       `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
@@ -37,8 +36,7 @@ export class DynamicContentService {
 
   async findAll(apiId: string, filters: any) {
     const table = this.getTable(apiId);
-    
-    // Check if table exists (table name is stored without quotes in information_schema)
+
     const tableNameWithoutQuotes = table.replace(/"/g, '');
     const tableExists = await this.dataSource.query(
       `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
@@ -65,8 +63,7 @@ export class DynamicContentService {
 
   async findOne(apiId: string, id: number) {
     const table = this.getTable(apiId);
-    
-    // Check if table exists (table name is stored without quotes in information_schema)
+
     const tableNameWithoutQuotes = table.replace(/"/g, '');
     const tableExists = await this.dataSource.query(
       `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,

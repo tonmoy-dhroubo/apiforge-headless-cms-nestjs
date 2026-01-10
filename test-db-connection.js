@@ -45,7 +45,6 @@ async function testConnection() {
     const result = await client.query('SELECT NOW()');
     console.log('✓ Query successful:', result.rows[0]);
     
-    // Check if tables exist
     const tables = await client.query(`
       SELECT table_name 
       FROM information_schema.tables 

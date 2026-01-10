@@ -4,7 +4,6 @@ const fs = require('fs');
 const GATEWAY_URL = 'http://localhost:8080';
 const LOG_FILE = 'api-test-results.log';
 
-// Helper function to make HTTP requests
 function makeRequest(method, url, data = null, headers = {}) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(url);
@@ -19,7 +18,6 @@ function makeRequest(method, url, data = null, headers = {}) {
       }
     };
 
-    // Only add Content-Type and Content-Length if there's data
     if (data) {
       options.headers['Content-Type'] = 'application/json';
       options.headers['Content-Length'] = Buffer.byteLength(dataString);
@@ -64,7 +62,6 @@ function makeRequest(method, url, data = null, headers = {}) {
   });
 }
 
-// Helper function to wait for service to be ready
 function waitForService(url, maxAttempts = 60, delay = 2000) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
@@ -95,7 +92,6 @@ function waitForService(url, maxAttempts = 60, delay = 2000) {
   });
 }
 
-// Logging function
 function log(message) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${message}\n`;
@@ -103,12 +99,10 @@ function log(message) {
   fs.appendFileSync(LOG_FILE, logMessage);
 }
 
-// Test functions
 async function testAuth() {
   log('\n=== Testing Auth Service ===');
   
   try {
-    // Register user
     log('1. Testing POST /api/auth/register');
     const registerData = {
       username: 'testuser',
@@ -119,7 +113,6 @@ async function testAuth() {
     log(`   Status: ${registerRes.status}`);
     log(`   Response: ${JSON.stringify(registerRes.data, null, 2)}`);
     
-    // Login
     log('\n2. Testing POST /api/auth/login');
     const loginData = {
       username: 'testuser',
@@ -129,7 +122,6 @@ async function testAuth() {
     log(`   Status: ${loginRes.status}`);
     log(`   Response: ${JSON.stringify(loginRes.data, null, 2)}`);
     
-    // Get users
     log('\n3. Testing GET /api/auth/users');
     const usersRes = await makeRequest('GET', `${GATEWAY_URL}/api/auth/users`);
     log(`   Status: ${usersRes.status}`);
@@ -146,7 +138,6 @@ async function testContentType() {
   log('\n=== Testing Content-Type Service ===');
   
   try {
-    // Create content type
     log('1. Testing POST /api/content-types');
     const contentTypeData = {
       name: 'Blog Post',
@@ -164,13 +155,11 @@ async function testContentType() {
     log(`   Status: ${createRes.status}`);
     log(`   Response: ${JSON.stringify(createRes.data, null, 2)}`);
     
-    // Get all content types
     log('\n2. Testing GET /api/content-types');
     const getAllRes = await makeRequest('GET', `${GATEWAY_URL}/api/content-types`);
     log(`   Status: ${getAllRes.status}`);
     log(`   Response: ${JSON.stringify(getAllRes.data, null, 2)}`);
     
-    // Get by API ID
     log('\n3. Testing GET /api/content-types/api-id/blog-post');
     const getByIdRes = await makeRequest('GET', `${GATEWAY_URL}/api/content-types/api-id/blog-post`);
     log(`   Status: ${getByIdRes.status}`);
@@ -192,7 +181,6 @@ async function testContent(apiId) {
   }
   
   try {
-    // Create content
     log(`1. Testing POST /api/content/${apiId}`);
     const contentData = {
       title: 'My First Blog Post',
@@ -205,20 +193,17 @@ async function testContent(apiId) {
     log(`   Response: ${JSON.stringify(createRes.data, null, 2)}`);
     const contentId = createRes.data?.data?.id;
     
-    // Get all content
     log(`\n2. Testing GET /api/content/${apiId}`);
     const getAllRes = await makeRequest('GET', `${GATEWAY_URL}/api/content/${apiId}`);
     log(`   Status: ${getAllRes.status}`);
     log(`   Response: ${JSON.stringify(getAllRes.data, null, 2)}`);
     
-    // Get specific content
     if (contentId) {
       log(`\n3. Testing GET /api/content/${apiId}/${contentId}`);
       const getOneRes = await makeRequest('GET', `${GATEWAY_URL}/api/content/${apiId}/${contentId}`);
       log(`   Status: ${getOneRes.status}`);
       log(`   Response: ${JSON.stringify(getOneRes.data, null, 2)}`);
       
-      // Update content
       log(`\n4. Testing PUT /api/content/${apiId}/${contentId}`);
       const updateData = {
         title: 'My Updated Blog Post',
@@ -230,7 +215,6 @@ async function testContent(apiId) {
       log(`   Status: ${updateRes.status}`);
       log(`   Response: ${JSON.stringify(updateRes.data, null, 2)}`);
       
-      // Search content
       log(`\n5. Testing POST /api/content/${apiId}/search`);
       const searchData = {
         filters: {
@@ -241,7 +225,6 @@ async function testContent(apiId) {
       log(`   Status: ${searchRes.status}`);
       log(`   Response: ${JSON.stringify(searchRes.data, null, 2)}`);
       
-      // Delete content
       log(`\n6. Testing DELETE /api/content/${apiId}/${contentId}`);
       const deleteRes = await makeRequest('DELETE', `${GATEWAY_URL}/api/content/${apiId}/${contentId}`);
       log(`   Status: ${deleteRes.status}`);
@@ -259,14 +242,11 @@ async function testMedia() {
   log('\n=== Testing Media Service ===');
   
   try {
-    // Get all media
     log('1. Testing GET /api/upload');
     const getAllRes = await makeRequest('GET', `${GATEWAY_URL}/api/upload`);
     log(`   Status: ${getAllRes.status}`);
     log(`   Response: ${JSON.stringify(getAllRes.data, null, 2)}`);
     
-    // Note: File upload requires multipart/form-data which is complex with native http
-    // We'll skip the upload test for now or use a library
     log('\n2. Testing POST /api/upload - SKIPPED (requires file upload)');
     log('   Note: File upload requires multipart/form-data handling');
     
@@ -281,7 +261,6 @@ async function testPermissions() {
   log('\n=== Testing Permission Service ===');
   
   try {
-    // Create API permission
     log('1. Testing POST /api/permissions/api');
     const apiPermissionData = {
       contentTypeApiId: 'blog-post',
@@ -293,7 +272,6 @@ async function testPermissions() {
     log(`   Status: ${apiPermRes.status}`);
     log(`   Response: ${JSON.stringify(apiPermRes.data, null, 2)}`);
     
-    // Create content permission
     log('\n2. Testing POST /api/permissions/content');
     const contentPermissionData = {
       contentTypeApiId: 'blog-post',
@@ -304,7 +282,6 @@ async function testPermissions() {
     log(`   Status: ${contentPermRes.status}`);
     log(`   Response: ${JSON.stringify(contentPermRes.data, null, 2)}`);
     
-    // Check API permission
     log('\n3. Testing POST /api/permissions/api/check');
     const checkData = {
       contentTypeApiId: 'blog-post',
@@ -323,20 +300,16 @@ async function testPermissions() {
   }
 }
 
-// Main test runner
 async function runTests() {
-  // Clear log file
   fs.writeFileSync(LOG_FILE, '');
   log('=== API Test Results ===');
   log(`Started at: ${new Date().toISOString()}\n`);
   
   try {
-    // Wait for gateway to be ready
     log('Waiting for Gateway service to be ready...');
     await waitForService(GATEWAY_URL, 30, 2000);
     log('Gateway is ready!\n');
     
-    // Run tests
     const token = await testAuth();
     const apiId = await testContentType();
     await testContent(apiId);
@@ -352,5 +325,4 @@ async function runTests() {
   }
 }
 
-// Run tests
 runTests().catch(console.error);

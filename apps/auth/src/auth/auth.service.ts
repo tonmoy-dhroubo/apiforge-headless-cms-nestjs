@@ -59,7 +59,6 @@ export class AuthService {
 
   async register(body: any) {
     try {
-      // Check if user exists by username or email
       const existingUser = await this.userRepo.findOne({ 
         where: { username: body.username }
       });
@@ -72,14 +71,12 @@ export class AuthService {
 
       const hashedPassword = await bcrypt.hash(body.password, 10);
       
-      // Get or create REGISTERED role
       let role = await this.roleRepo.findOne({ where: { name: 'REGISTERED' } });
       if (!role) {
         role = this.roleRepo.create({ name: 'REGISTERED', description: 'Default registered user' });
         role = await this.roleRepo.save(role);
       }
 
-      // Create user
       const user = this.userRepo.create({
         username: body.username,
         email: body.email,
@@ -106,13 +103,11 @@ export class AuthService {
   }
 
   async login(body: any) {
-    // Support both username and email login
     const identifier = body.username || body.email;
     if (!identifier) {
       throw new UnauthorizedException('Username or email is required');
     }
 
-    // Try username first, then email
     let user = await this.userRepo.findOne({ 
       where: { username: identifier },
       relations: ['roles']

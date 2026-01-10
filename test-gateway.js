@@ -8,7 +8,7 @@ const data = JSON.stringify({
 
 const options = {
   hostname: 'localhost',
-  port: 8080, // Through gateway
+  port: 8080,
   path: '/api/auth/register',
   method: 'POST',
   headers: {
@@ -43,4 +43,3 @@ req.on('timeout', () => {
 
 req.write(data);
 req.end();
-

@@ -8,7 +8,7 @@ const data = JSON.stringify({
 
 const options = {
   hostname: 'localhost',
-  port: 8081, // Direct to auth service
+  port: 8081,
   path: '/api/auth/register',
   method: 'POST',
   headers: {
@@ -50,4 +50,3 @@ req.on('timeout', () => {
 
 req.write(data);
 req.end();
-

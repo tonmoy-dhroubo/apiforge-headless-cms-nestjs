@@ -19,11 +19,10 @@ export class AppModule implements NestModule {
             target,
             changeOrigin: true,
             pathRewrite: (path) => path,
-            timeout: 60000, // 60 second timeout
+            timeout: 60000,
             proxyTimeout: 60000,
             logLevel: 'debug',
             onProxyReq: (proxyReq, req, res) => {
-              // Ensure body is forwarded
               if (req.body) {
                 const bodyData = JSON.stringify(req.body);
                 proxyReq.setHeader('Content-Type', 'application/json');

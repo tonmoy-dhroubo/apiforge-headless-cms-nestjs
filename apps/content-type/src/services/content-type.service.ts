@@ -43,7 +43,6 @@ export class ContentTypeService {
       const exists = await this.repo.findOne({ where: { apiId: dto.apiId } });
       if(exists) throw new ConflictException('API ID Exists');
 
-      // Create Field entities from dto.fields
       const fields = (dto.fields || []).map((f: any) => {
         const field = new Field();
         field.name = f.name || f.fieldName;
@@ -56,7 +55,6 @@ export class ContentTypeService {
         return field;
       });
 
-      // Prepare fields for dynamic table creation
       const tableFields = fields.map(f => ({
         fieldName: f.fieldName,
         type: f.type,
@@ -64,10 +62,8 @@ export class ContentTypeService {
         unique: f.unique
       }));
 
-      // Create the dynamic table first
       await this.dynamicTableService.createTable(dto.apiId, tableFields);
 
-      // Create ContentType with fields
       const contentType = this.repo.create({
         name: dto.name,
         pluralName: dto.pluralName || `${dto.name}s`,
