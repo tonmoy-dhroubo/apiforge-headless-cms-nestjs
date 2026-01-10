@@ -14,7 +14,8 @@ Headless CMS built with NestJS and a small set of microservices: auth, content t
 ## Prerequisites
 
 - Node.js v18+
-- PostgreSQL (or use the configured Neon PostgreSQL)
+- PostgreSQL (or the configured Neon PostgreSQL)
+- Docker (optional)
 
 ## Setup
 
@@ -48,6 +49,16 @@ Build all services:
 ```bash
 npm run build
 ```
+
+## Docker
+
+Run the full stack (Postgres + all services in one container):
+
+```bash
+docker compose up --build
+```
+
+Gateway: `http://localhost:8080`
 
 ## API Endpoints
 

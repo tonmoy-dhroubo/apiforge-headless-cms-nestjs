@@ -1,0 +1,16 @@
+.git
+.run
+dist
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+**/*.log
+
+.env
+
+uploads
+db/*.sql.bak
+
+README*.md
+api-test-results.log
