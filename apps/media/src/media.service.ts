@@ -19,7 +19,7 @@ export class MediaService {
       ext: extension || null,
       mime: file.mimetype,
       size: file.size ? file.size / 1024 : null,
-      url: `/api/upload/files/${file.filename}`,
+      url: `/api/media/files/${file.filename}`,
       provider: 'local',
     });
     return this.repo.save(media);

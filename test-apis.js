@@ -242,12 +242,12 @@ async function testMedia() {
   log('\n=== Testing Media Service ===');
   
   try {
-    log('1. Testing GET /api/upload');
-    const getAllRes = await makeRequest('GET', `${GATEWAY_URL}/api/upload`);
+    log('1. Testing GET /api/media');
+    const getAllRes = await makeRequest('GET', `${GATEWAY_URL}/api/media`);
     log(`   Status: ${getAllRes.status}`);
     log(`   Response: ${JSON.stringify(getAllRes.data, null, 2)}`);
     
-    log('\n2. Testing POST /api/upload - SKIPPED (requires file upload)');
+    log('\n2. Testing POST /api/media/upload - SKIPPED (requires file upload)');
     log('   Note: File upload requires multipart/form-data handling');
     
     return true;

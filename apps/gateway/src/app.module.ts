@@ -22,7 +22,7 @@ export class AppModule implements NestModule {
       { route: '/api/auth', target: 'http://localhost:7081' },
       { route: '/api/content-types', target: 'http://localhost:7082' },
       { route: '/api/content', target: 'http://localhost:7083' },
-      { route: '/api/upload', target: 'http://localhost:7084' },
+      { route: '/api/media', target: 'http://localhost:7084' },
       { route: '/api/permissions', target: 'http://localhost:7085' },
     ];
 

@@ -9,11 +9,11 @@ import { ApiResponse } from '@app/common';
 
 const UPLOAD_DIR = './uploads';
 
-@Controller('api/upload')
+@Controller('api/media')
 export class MediaController {
   constructor(private service: MediaService) {}
 
-  @Post()
+  @Post('upload')
   @UseInterceptors(FileInterceptor('files', {
     storage: diskStorage({
       destination: UPLOAD_DIR,
@@ -33,17 +33,6 @@ export class MediaController {
     return ApiResponse.success(await this.service.findAll());
   }
 
-  @Get(':id')
-  async getById(@Param('id') id: number) {
-    return ApiResponse.success(await this.service.findById(Number(id)));
-  }
-
-  @Delete(':id')
-  async delete(@Param('id') id: number) {
-    await this.service.delete(Number(id), UPLOAD_DIR);
-    return ApiResponse.success(null, 'File deleted successfully');
-  }
-
   @Get('files/:filename')
   async serveFile(@Param('filename') filename: string, @Res() res: Response) {
     const media = await this.service.findByFilename(filename);
@@ -55,5 +44,16 @@ export class MediaController {
       );
     }
     return res.sendFile(filename, { root: UPLOAD_DIR });
+  }
+
+  @Get(':id')
+  async getById(@Param('id') id: number) {
+    return ApiResponse.success(await this.service.findById(Number(id)));
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: number) {
+    await this.service.delete(Number(id), UPLOAD_DIR);
+    return ApiResponse.success(null, 'File deleted successfully');
   }
 }

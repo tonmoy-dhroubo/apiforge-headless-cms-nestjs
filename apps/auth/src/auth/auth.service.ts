@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { User, Role } from '../user/user.entity';
 
 @Injectable()
@@ -71,11 +72,7 @@ export class AuthService {
 
       const hashedPassword = await bcrypt.hash(body.password, 10);
       
-      let role = await this.roleRepo.findOne({ where: { name: 'REGISTERED' } });
-      if (!role) {
-        role = this.roleRepo.create({ name: 'REGISTERED', description: 'Default registered user' });
-        role = await this.roleRepo.save(role);
-      }
+      const role = await this.getRegisteredRole();
 
       const user = this.userRepo.create({
         username: body.username,
@@ -212,5 +209,63 @@ export class AuthService {
     } catch {
       return false;
     }
+  }
+
+  async loginWithOAuth(profile: { email?: string; firstname?: string; lastname?: string }) {
+    const email = profile?.email?.trim();
+    if (!email) {
+      throw new UnauthorizedException('OAuth2 login failed: email not provided');
+    }
+
+    let user = await this.userRepo.findOne({ where: { email }, relations: ['roles'] });
+    if (!user) {
+      const role = await this.getRegisteredRole();
+      const username = await this.uniqueUsername(this.deriveUsername(email));
+      const password = await bcrypt.hash(randomUUID(), 10);
+
+      user = this.userRepo.create({
+        username,
+        email,
+        password,
+        firstname: profile?.firstname || null,
+        lastname: profile?.lastname || null,
+        roles: [role],
+        enabled: true,
+      });
+      user = await this.userRepo.save(user);
+    }
+
+    if (!user.enabled) {
+      throw new UnauthorizedException('Account is disabled');
+    }
+
+    return this.buildAuthResponse(user);
+  }
+
+  private async getRegisteredRole(): Promise<Role> {
+    let role = await this.roleRepo.findOne({ where: { name: 'REGISTERED' } });
+    if (!role) {
+      role = this.roleRepo.create({
+        name: 'REGISTERED',
+        description: 'Default registered user',
+      });
+      role = await this.roleRepo.save(role);
+    }
+    return role;
+  }
+
+  private deriveUsername(email: string) {
+    const at = email.indexOf('@');
+    return at > 0 ? email.slice(0, at) : email;
+  }
+
+  private async uniqueUsername(baseUsername: string) {
+    let candidate = baseUsername;
+    let suffix = 1;
+    while (await this.userRepo.findOne({ where: { username: candidate } })) {
+      candidate = `${baseUsername}-${suffix}`;
+      suffix += 1;
+    }
+    return candidate;
   }
 }

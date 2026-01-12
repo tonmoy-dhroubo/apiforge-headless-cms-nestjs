@@ -1,6 +1,9 @@
-import { Controller, Post, Body, Get, Put, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, Delete, Param, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { ApiResponse } from '@app/common';
+import { GoogleAuthGuard } from './google.guard';
+import { GoogleProfile } from './google.strategy';
 
 @Controller('api/auth')
 export class AuthController {
@@ -28,6 +31,19 @@ export class AuthController {
   async refresh(@Body() body: { refreshToken: string }) {
     const response = await this.service.refresh(body.refreshToken);
     return ApiResponse.success(response, 'Token refreshed');
+  }
+
+  @Get('oauth2/google')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth() {
+    return;
+  }
+
+  @Get('oauth2/callback/google')
+  @UseGuards(GoogleAuthGuard)
+  async googleCallback(@Req() req: Request) {
+    const response = await this.service.loginWithOAuth(req.user as GoogleProfile);
+    return ApiResponse.success(response, 'OAuth2 login successful');
   }
 
   @Get('users')

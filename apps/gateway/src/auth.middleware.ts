@@ -53,11 +53,8 @@ export class AuthGatewayMiddleware implements NestMiddleware {
 
   private isAuthEndpoint(path: string) {
     return (
-      path.includes('/api/auth/login') ||
-      path.includes('/api/auth/register') ||
-      path.includes('/api/auth/validate') ||
-      path.includes('/api/media/files') ||
-      path.includes('/api/upload/files')
+      path.startsWith('/api/auth') ||
+      path.includes('/api/media/files')
     );
   }
 
