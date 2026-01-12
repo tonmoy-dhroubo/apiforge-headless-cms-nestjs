@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(ContentTypeModule);
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());
-  await app.listen(8082);
-  console.log('Content Type Service running on 8082');
+  await app.listen(7082);
+  console.log('Content Type Service running on 7082');
 }
 bootstrap();

@@ -1,7 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 
-const GATEWAY_URL = 'http://localhost:8080';
+const GATEWAY_URL = 'http://localhost:7080';
 const LOG_FILE = 'api-test-results.log';
 
 function makeRequest(method, url, data = null, headers = {}) {

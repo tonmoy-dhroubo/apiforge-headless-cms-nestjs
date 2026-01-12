@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(PermissionModule);
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());
-  await app.listen(8085);
-  console.log('Permission Service running on 8085');
+  await app.listen(7085);
+  console.log('Permission Service running on 7085');
 }
 bootstrap();

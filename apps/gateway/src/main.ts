@@ -9,7 +9,7 @@ async function bootstrap() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  await app.listen(8080);
-  console.log('Gateway is running on http://localhost:8080');
+  await app.listen(7080);
+  console.log('Gateway is running on http://localhost:7080');
 }
 bootstrap();

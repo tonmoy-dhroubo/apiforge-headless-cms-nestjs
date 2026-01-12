@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(ContentModule);
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());
-  await app.listen(8083);
-  console.log('Content CRUD Service running on 8083');
+  await app.listen(7083);
+  console.log('Content CRUD Service running on 7083');
 }
 bootstrap();

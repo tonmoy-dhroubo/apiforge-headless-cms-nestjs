@@ -3,20 +3,39 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PID_DIR="$ROOT/.run/pids"
+SERVICES=(gateway auth content-type content media permission)
 
 if [ ! -d "$PID_DIR" ]; then
-  echo "No PID directory found."
+  echo "No running services found (missing $PID_DIR)."
   exit 0
 fi
 
-for pid_file in "$PID_DIR"/*.pid; do
-  [ -f "$pid_file" ] || continue
+printf "\nStopping Apiforge NestJS services\n\n"
+
+for s in "${SERVICES[@]}"; do
+  pid_file="$PID_DIR/$s.pid"
+  if [ ! -f "$pid_file" ]; then
+    printf "%-16s %s\n" "$s" "not running"
+    continue
+  fi
+
   pid="$(cat "$pid_file")"
   if kill -0 "$pid" 2>/dev/null; then
     kill "$pid"
-    echo "Stopped $(basename "$pid_file" .pid) (pid $pid)"
+    for _ in {1..30}; do
+      if kill -0 "$pid" 2>/dev/null; then
+        sleep 1
+      else
+        break
+      fi
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      kill -9 "$pid" || true
+    fi
+    printf "%-16s %s\n" "$s" "stopped"
   else
-    echo "Not running: $(basename "$pid_file" .pid)"
+    printf "%-16s %s\n" "$s" "stale pid $pid"
   fi
+
   rm -f "$pid_file"
 done

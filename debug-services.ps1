@@ -57,7 +57,7 @@ $registerBody = @{
 } | ConvertTo-Json
 
 try {
-    $response = Invoke-WebRequest -Uri "http://localhost:8080/api/auth/register" -Method POST -Body $registerBody -ContentType "application/json" -ErrorAction Stop
+    $response = Invoke-WebRequest -Uri "http://localhost:7080/api/auth/register" -Method POST -Body $registerBody -ContentType "application/json" -ErrorAction Stop
     Write-Host "Status: $($response.StatusCode)" -ForegroundColor Green
     Write-Host "Response: $($response.Content)"
 } catch {

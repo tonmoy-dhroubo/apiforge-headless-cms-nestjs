@@ -4,17 +4,17 @@ Headless CMS built with NestJS and a small set of microservices: auth, content t
 
 ## Services
 
-- Gateway (8080): routes requests to microservices
-- Auth (8081): registration, login, JWT
-- Content-Type (8082): dynamic schema definitions
-- Content (8083): content CRUD for dynamic types
-- Media (8084): file upload and media metadata
-- Permission (8085): API and content-level permissions
+- Gateway (7080): routes requests to microservices
+- Auth (7081): registration, login, JWT
+- Content-Type (7082): dynamic schema definitions
+- Content (7083): content CRUD for dynamic types
+- Media (7084): file upload and media metadata
+- Permission (7085): API and content-level permissions
 
 ## Prerequisites
 
 - Node.js v18+
-- PostgreSQL (or the configured Neon PostgreSQL)
+- PostgreSQL 16+
 - Docker (optional)
 
 ## Setup
@@ -26,7 +26,7 @@ npm install
 Optional environment overrides in `.env`:
 
 ```env
-DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
+DATABASE_URL=postgresql://dev:devpass@localhost:5432/devdb?sslmode=require&channel_binding=require
 JWT_SECRET=your-secret-key
 JWT_EXPIRATION=1h
 ```
@@ -50,6 +50,12 @@ Build all services:
 npm run build
 ```
 
+Seed the database:
+
+```bash
+./db/setup_db.sh
+```
+
 ## Docker
 
 Run the full stack (Postgres + all services in one container):
@@ -58,11 +64,11 @@ Run the full stack (Postgres + all services in one container):
 docker compose up --build
 ```
 
-Gateway: `http://localhost:8080`
+Gateway: `http://localhost:7080`
 
 ## API Endpoints
 
-All endpoints are served via the gateway at `http://localhost:8080`.
+All endpoints are served via the gateway at `http://localhost:7080`.
 
 - Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/users`
 - Content types: `POST /api/content-types`, `GET /api/content-types`, `GET /api/content-types/api-id/:apiId`

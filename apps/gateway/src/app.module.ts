@@ -1,16 +1,39 @@
 import { Module, MiddlewareConsumer, RequestMethod, NestModule } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { AuthGatewayMiddleware } from './auth.middleware';
 
-@Module({})
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get('JWT_SECRET') || 'default-secret',
+      }),
+    }),
+  ],
+  providers: [AuthGatewayMiddleware],
+})
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     const services = [
-      { route: '/api/auth', target: 'http://localhost:8081' },
-      { route: '/api/content-types', target: 'http://localhost:8082' },
-      { route: '/api/content', target: 'http://localhost:8083' },
-      { route: '/api/upload', target: 'http://localhost:8084' },
-      { route: '/api/permissions', target: 'http://localhost:8085' },
+      { route: '/api/auth', target: 'http://localhost:7081' },
+      { route: '/api/content-types', target: 'http://localhost:7082' },
+      { route: '/api/content', target: 'http://localhost:7083' },
+      { route: '/api/upload', target: 'http://localhost:7084' },
+      { route: '/api/permissions', target: 'http://localhost:7085' },
     ];
+
+    consumer
+      .apply(AuthGatewayMiddleware)
+      .forRoutes(
+        ...services.map(({ route }) => ({
+          path: `${route}*`,
+          method: RequestMethod.ALL,
+        })),
+      );
 
     services.forEach(({ route, target }) => {
       consumer

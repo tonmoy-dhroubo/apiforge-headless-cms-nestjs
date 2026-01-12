@@ -8,7 +8,7 @@ async function bootstrap() {
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());
-  await app.listen(8084);
-  console.log('Media Service running on 8084');
+  await app.listen(7084);
+  console.log('Media Service running on 7084');
 }
 bootstrap();

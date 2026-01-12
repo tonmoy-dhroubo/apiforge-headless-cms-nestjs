@@ -5,20 +5,49 @@ import { DataSource } from 'typeorm';
 export class DynamicContentService {
   constructor(private dataSource: DataSource) {}
 
+  private contentTypeServiceUrl =
+    process.env.CONTENT_TYPE_SERVICE_URL || 'http://localhost:7082';
+
   private getTable(apiId: string) { return `ct_${apiId}`; }
+
+  private async ensureContentTypeExists(apiId: string) {
+    try {
+      const response = await fetch(
+        `${this.contentTypeServiceUrl}/api/content-types/api-id/${apiId}`,
+      );
+      if (!response.ok) {
+        throw new Error('Content type lookup failed');
+      }
+      const payload = (await response.json().catch(() => null)) as
+        | { success?: boolean; data?: unknown }
+        | null;
+      if (!payload || payload.success === false || !payload.data) {
+        throw new Error('Content type not found');
+      }
+    } catch {
+      throw new NotFoundException(`Content type not found: ${apiId}`);
+    }
+  }
+
+  private async ensureTableExists(table: string, apiId: string) {
+    const tableNameWithoutQuotes = table.replace(/"/g, '');
+    const tableExists = await this.dataSource.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
+      [tableNameWithoutQuotes],
+    );
+
+    if (!tableExists[0]?.exists) {
+      throw new NotFoundException(
+        `Content type with API ID "${apiId}" does not exist. Please create the content type first.`,
+      );
+    }
+  }
 
   async create(apiId: string, data: Record<string, any>) {
     const table = this.getTable(apiId);
 
-    const tableNameWithoutQuotes = table.replace(/"/g, '');
-    const tableExists = await this.dataSource.query(
-      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
-      [tableNameWithoutQuotes]
-    );
-    
-    if (!tableExists[0]?.exists) {
-      throw new NotFoundException(`Content type with API ID "${apiId}" does not exist. Please create the content type first.`);
-    }
+    await this.ensureContentTypeExists(apiId);
+    await this.ensureTableExists(table, apiId);
     
     const columns = Object.keys(data).map(k => `"${k}"`).join(', ');
     const values = Object.values(data);
@@ -37,15 +66,8 @@ export class DynamicContentService {
   async findAll(apiId: string, filters: any) {
     const table = this.getTable(apiId);
 
-    const tableNameWithoutQuotes = table.replace(/"/g, '');
-    const tableExists = await this.dataSource.query(
-      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
-      [tableNameWithoutQuotes]
-    );
-    
-    if (!tableExists[0]?.exists) {
-      throw new NotFoundException(`Content type with API ID "${apiId}" does not exist. Please create the content type first.`);
-    }
+    await this.ensureContentTypeExists(apiId);
+    await this.ensureTableExists(table, apiId);
     
     let sql = `SELECT * FROM "${table}"`;
     const params = [];
@@ -64,15 +86,8 @@ export class DynamicContentService {
   async findOne(apiId: string, id: number) {
     const table = this.getTable(apiId);
 
-    const tableNameWithoutQuotes = table.replace(/"/g, '');
-    const tableExists = await this.dataSource.query(
-      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
-      [tableNameWithoutQuotes]
-    );
-    
-    if (!tableExists[0]?.exists) {
-      throw new NotFoundException(`Content type with API ID "${apiId}" does not exist. Please create the content type first.`);
-    }
+    await this.ensureContentTypeExists(apiId);
+    await this.ensureTableExists(table, apiId);
     
     const res = await this.dataSource.query(
       `SELECT * FROM "${table}" WHERE id = $1`, [id]
@@ -82,6 +97,7 @@ export class DynamicContentService {
   }
 
   async update(apiId: string, id: number, data: any) {
+    await this.findOne(apiId, id);
     const table = this.getTable(apiId);
     const updates = Object.keys(data).map((k, i) => `"${k}" = $${i + 2}`).join(', ');
     const values = [id, ...Object.values(data)];
@@ -92,6 +108,7 @@ export class DynamicContentService {
   }
 
   async delete(apiId: string, id: number) {
+    await this.findOne(apiId, id);
     await this.dataSource.query(`DELETE FROM "${this.getTable(apiId)}" WHERE id = $1`, [id]);
   }
 }

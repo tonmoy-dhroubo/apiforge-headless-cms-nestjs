@@ -18,14 +18,14 @@ export class DynamicTableService {
         'NUMBER': 'NUMERIC',
         'BOOLEAN': 'BOOLEAN',
         'DATETIME': 'TIMESTAMP',
-        'MEDIA': 'INTEGER',
-        'RELATION': 'INTEGER'
+        'MEDIA': 'BIGINT',
+        'RELATION': 'BIGINT'
       };
       return map[type] || 'VARCHAR(255)';
     };
 
     let sql = `CREATE TABLE IF NOT EXISTS "${tableName}" (
-      id SERIAL PRIMARY KEY,
+      id BIGSERIAL PRIMARY KEY,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
 
