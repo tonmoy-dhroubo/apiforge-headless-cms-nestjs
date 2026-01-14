@@ -1,6 +1,6 @@
 const http = require('http');
 
-const data = JSON.stringify({
+const requestBody = JSON.stringify({
   username: 'testuser',
   email: 'test@example.com',
   password: 'Test123!@#'
@@ -13,40 +13,42 @@ const options = {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Content-Length': data.length
+    'Content-Length': requestBody.length
   },
   timeout: 30000
 };
 
 console.log('Sending request to auth service...');
-const req = http.request(options, (res) => {
-  console.log(`Status: ${res.statusCode}`);
-  console.log(`Headers:`, res.headers);
+const req = http.request(options, (response) => {
+  console.log(`Status: ${response.statusCode}`);
+  console.log(`Headers:`, response.headers);
   
-  let body = '';
-  res.on('data', (chunk) => {
-    body += chunk;
+  let responseBody = '';
+  response.on('data', (chunk) => {
+    responseBody += chunk;
   });
   
-  res.on('end', () => {
-    console.log('Response:', body);
+  response.on('end', () => {
+    console.log('Response:', responseBody);
     try {
-      const parsed = JSON.parse(body);
+      const parsed = JSON.parse(responseBody);
       console.log('Parsed:', JSON.stringify(parsed, null, 2));
-    } catch (e) {
-      console.log('Could not parse as JSON');
+    } catch (error) {
+      console.log('Response was not valid JSON:', error.message);
     }
   });
 });
 
 req.on('error', (error) => {
-  console.error('Request error:', error.message);
+  console.error('Auth request failed:', error.message);
 });
 
 req.on('timeout', () => {
-  console.error('Request timeout!');
+  console.error(
+    `Auth request to ${options.path} timed out after ${options.timeout}ms.`,
+  );
   req.destroy();
 });
 
-req.write(data);
+req.write(requestBody);
 req.end();

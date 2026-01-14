@@ -7,33 +7,33 @@ export class ContentController {
   constructor(private service: DynamicContentService) {}
 
   @Post()
-  async create(@Param('apiId') apiId: string, @Body() body: any) {
-    const result = await this.service.create(apiId, body);
-    return ApiResponse.success(result, 'Content created successfully');
+  async create(@Param('apiId') apiId: string, @Body() contentPayload: any) {
+    const createdContent = await this.service.create(apiId, contentPayload);
+    return ApiResponse.success(createdContent, 'Content created successfully');
   }
 
   @Get()
   async findAll(@Param('apiId') apiId: string) {
-    const result = await this.service.findAll(apiId, {});
-    return ApiResponse.success(result);
+    const contentList = await this.service.findAll(apiId, {});
+    return ApiResponse.success(contentList);
   }
 
   @Post('search')
   async search(@Param('apiId') apiId: string, @Body() filters: any) {
-    const result = await this.service.findAll(apiId, filters);
-    return ApiResponse.success(result);
+    const contentList = await this.service.findAll(apiId, filters);
+    return ApiResponse.success(contentList);
   }
 
   @Get(':id')
   async findOne(@Param('apiId') apiId: string, @Param('id') id: number) {
-    const result = await this.service.findOne(apiId, id);
-    return ApiResponse.success(result);
+    const contentEntry = await this.service.findOne(apiId, id);
+    return ApiResponse.success(contentEntry);
   }
 
   @Put(':id')
-  async update(@Param('apiId') apiId: string, @Param('id') id: number, @Body() body: any) {
-    const result = await this.service.update(apiId, id, body);
-    return ApiResponse.success(result, 'Content updated successfully');
+  async update(@Param('apiId') apiId: string, @Param('id') id: number, @Body() contentPayload: any) {
+    const updatedContent = await this.service.update(apiId, id, contentPayload);
+    return ApiResponse.success(updatedContent, 'Content updated successfully');
   }
 
   @Delete(':id')

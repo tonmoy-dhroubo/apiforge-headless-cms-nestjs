@@ -42,17 +42,17 @@ async function testConnection() {
     await client.connect();
     console.log('✓ Connected successfully!');
     
-    const result = await client.query('SELECT NOW()');
-    console.log('✓ Query successful:', result.rows[0]);
+    const timeResult = await client.query('SELECT NOW()');
+    console.log('✓ Query successful:', timeResult.rows[0]);
     
-    const tables = await client.query(`
+    const tableListResult = await client.query(`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public'
       ORDER BY table_name
     `);
     console.log('\nExisting tables:');
-    tables.rows.forEach(row => console.log('  -', row.table_name));
+    tableListResult.rows.forEach(tableRow => console.log('  -', tableRow.table_name));
     
     await client.end();
     console.log('\n✓ Connection closed successfully');

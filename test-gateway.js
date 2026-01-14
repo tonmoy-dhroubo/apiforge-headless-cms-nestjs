@@ -1,6 +1,6 @@
 const http = require('http');
 
-const data = JSON.stringify({
+const requestBody = JSON.stringify({
   username: 'testuser2',
   email: 'test2@example.com',
   password: 'Test123!@#'
@@ -13,33 +13,35 @@ const options = {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Content-Length': data.length
+    'Content-Length': requestBody.length
   },
   timeout: 30000
 };
 
 console.log('Testing through gateway...');
-const req = http.request(options, (res) => {
-  console.log(`Status: ${res.statusCode}`);
+const req = http.request(options, (response) => {
+  console.log(`Status: ${response.statusCode}`);
   
-  let body = '';
-  res.on('data', (chunk) => {
-    body += chunk;
+  let responseBody = '';
+  response.on('data', (chunk) => {
+    responseBody += chunk;
   });
   
-  res.on('end', () => {
-    console.log('Response:', body);
+  response.on('end', () => {
+    console.log('Response:', responseBody);
   });
 });
 
 req.on('error', (error) => {
-  console.error('Request error:', error.message);
+  console.error('Gateway request failed:', error.message);
 });
 
 req.on('timeout', () => {
-  console.error('Request timeout!');
+  console.error(
+    `Gateway request to ${options.path} timed out after ${options.timeout}ms.`,
+  );
   req.destroy();
 });
 
-req.write(data);
+req.write(requestBody);
 req.end();

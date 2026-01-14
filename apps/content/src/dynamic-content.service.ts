@@ -43,21 +43,21 @@ export class DynamicContentService {
     }
   }
 
-  async create(apiId: string, data: Record<string, any>) {
+  async create(apiId: string, contentData: Record<string, any>) {
     const table = this.getTable(apiId);
 
     await this.ensureContentTypeExists(apiId);
     await this.ensureTableExists(table, apiId);
     
-    const columns = Object.keys(data).map(k => `"${k}"`).join(', ');
-    const values = Object.values(data);
+    const columns = Object.keys(contentData).map(k => `"${k}"`).join(', ');
+    const values = Object.values(contentData);
     const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
     const sql = `INSERT INTO "${table}" (${columns}) VALUES (${placeholders}) RETURNING *`;
     
     try {
-      const res = await this.dataSource.query(sql, values);
-      return res[0];
+      const insertResult = await this.dataSource.query(sql, values);
+      return insertResult[0];
     } catch (e) {
       throw new Error(`Failed to insert into ${table}: ${e.message}`);
     }
@@ -89,22 +89,22 @@ export class DynamicContentService {
     await this.ensureContentTypeExists(apiId);
     await this.ensureTableExists(table, apiId);
     
-    const res = await this.dataSource.query(
+    const rowResult = await this.dataSource.query(
       `SELECT * FROM "${table}" WHERE id = $1`, [id]
     );
-    if (!res.length) throw new NotFoundException(`Content with id ${id} not found`);
-    return res[0];
+    if (!rowResult.length) throw new NotFoundException(`Content with id ${id} not found`);
+    return rowResult[0];
   }
 
-  async update(apiId: string, id: number, data: any) {
+  async update(apiId: string, id: number, contentData: any) {
     await this.findOne(apiId, id);
     const table = this.getTable(apiId);
-    const updates = Object.keys(data).map((k, i) => `"${k}" = $${i + 2}`).join(', ');
-    const values = [id, ...Object.values(data)];
+    const updates = Object.keys(contentData).map((k, i) => `"${k}" = $${i + 2}`).join(', ');
+    const values = [id, ...Object.values(contentData)];
 
     const sql = `UPDATE "${table}" SET ${updates}, updated_at = NOW() WHERE id = $1 RETURNING *`;
-    const res = await this.dataSource.query(sql, values);
-    return res[0];
+    const updateResult = await this.dataSource.query(sql, values);
+    return updateResult[0];
   }
 
   async delete(apiId: string, id: number) {
